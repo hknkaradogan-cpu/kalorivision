@@ -9,6 +9,7 @@ import { Food } from '../data/foods';
 import { Tahmin, yemekTani } from '../lib/vision';
 import { oner } from '../lib/oneri';
 import { cevapla } from '../lib/asistan';
+import { yzAcik, yzSor } from '../lib/yz';
 import { Tarif } from '../data/tarifler';
 
 interface P { adimDurum?: string; s: AppState; set: (f: (s: AppState) => AppState) => void; git: (t: string) => void; ekleAc: (m: Meal) => void }
@@ -93,7 +94,11 @@ export function Beslenme({ s, set }: P) {
   const p = s.profile; const h = p ? hedefler(p) : undefined; const t = sum(s.entries.filter(e => e.date === today()));
   const [acik, setAcik] = useState<Tarif | null>(null); const [ekle, setEkle] = useState<Meal | null>(null);
   const [sor, setSor] = useState(''); const [sohbet, setSohbet] = useState<{ k: boolean; m: string }[]>([]);
-  const gonder = (q: string) => { if (!q.trim()) return; setSohbet(c => [...c, { k: true, m: q }, { k: false, m: cevapla(q, s.entries, s.water, p) }]); setSor(''); };
+  const [bekle, setBekle] = useState(false);
+  const gonder = async (q: string) => { if (!q.trim() || bekle) return; const yeni = [...sohbet, { k: true, m: q }]; setSor('');
+    if (!yzAcik()) { setSohbet([...yeni, { k: false, m: cevapla(q, s.entries, s.water, p) }]); return; }
+    setSohbet(yeni); setBekle(true);
+    try { const c = await yzSor(yeni, s); setSohbet([...yeni, { k: false, m: c }]); } catch (e) { setSohbet([...yeni, { k: false, m: 'Asistana ulaşılamadı (' + (e as Error).message + '). Cihaz içi cevap:\n' + cevapla(q, s.entries, s.water, p) }]); } finally { setBekle(false); } };
   const oneriler = oner(h ? h.kcal - t.kcal : 500, h ? h.p - t.p : 0, p);
   return (<div className="page"><h1>Beslenme</h1>
     <div className="card"><h3>Yemek ara ve ekle</h3><div className="row wrap">{MEALS.map(m => <button key={m.id} className="btn sm" onClick={() => setEkle(m.id)}>{m.ikon} {m.ad.split(' ')[0]}</button>)}</div></div>
@@ -106,8 +111,8 @@ export function Beslenme({ s, set }: P) {
     {p?.diyabet && <div className="card"><h3>🩸 Diyabet rehberi</h3><p className="small muted">{DIYABET_UYARI}</p>{(() => { const ogunKarb = MEALS.map(m => ({ m, k: sum(s.entries.filter(e => e.date === today() && e.meal === m.id)).c })).filter(x => x.k > KARB_UYARI_ESIK); return ogunKarb.length ? <p className="warnx">⚠️ {ogunKarb.map(x => `${x.m.ad}: ${Math.round(x.k)} g karbonhidrat`).join(', ')} – bir öğün için yüksek olabilir ({KARB_UYARI_ESIK} g referans). Doktorunun belirlediği miktara bak.</p> : null; })()}{diyabetRehberi.map(b => <div key={b.baslik}><b>{b.baslik}</b><ul className="small">{b.maddeler.map(m => <li key={m}>{m}</li>)}</ul></div>)}</div>}
     <div className="card"><div className="bot"><span className="botav">🤖</span><div><b>Beslenme Asistanı</b><small className="onl">● Çevrimiçi</small></div></div><div className="chat">{sohbet.map((c, i) => <div key={i} className={c.k ? 'm me' : 'm'}>{c.m}</div>)}</div>
       <div className="row wrap">{['Bugün kaç kalori aldım?', 'Akşam ne yemeliyim?', 'Protein ihtiyacımı karşılıyor muyum?', 'Bugünkü beslenmem dengeli mi?'].map(q => <button key={q} className="chip" onClick={() => gonder(q)}>{q}</button>)}</div>
-      <form className="row" onSubmit={e => { e.preventDefault(); gonder(sor); }}><input className="inp" value={sor} onChange={e => setSor(e.target.value)} placeholder="Bir soru yaz…" /><button className="btn sm">Gönder</button></form>
-      <p className="muted small">Asistan cihazında çalışır, tıbbi teşhis koymaz.</p></div>
+      {bekle && <p className="muted small">Asistan yazıyor…</p>}<form className="row" onSubmit={e => { e.preventDefault(); gonder(sor); }}><input className="inp" value={sor} onChange={e => setSor(e.target.value)} placeholder="Bir soru yaz…" /><button className="btn sm">Gönder</button></form>
+      <p className="muted small">{yzAcik() ? 'Sorduğun soru ve günlük özetin yapay zekâ servisine gönderilir. ' : 'Asistan cihazında çalışır. '}Tıbbi teşhis koymaz.</p></div>
     {ekle && <AddFood meal={ekle} kapat={() => setEkle(null)} ekle={e => set(x => ({ ...x, entries: [...x.entries, e] }))} />}
   </div>);
 }
