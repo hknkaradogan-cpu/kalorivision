@@ -58,3 +58,12 @@ body{background:linear-gradient(180deg,#eaf6ec 0%,#f7fbf8 40%,#f2f8f3 100%);back
 .avrow{display:flex;gap:12px;align-items:center;margin:8px 0 12px}.avatar{font-size:2.6rem;background:#cfe9d5;border-radius:50%;width:68px;height:68px;display:flex;align-items:center;justify-content:center}
 .tabs button{border-radius:20px}
 nav{border-radius:22px 22px 0 0;box-shadow:0 -4px 16px rgba(0,0,0,.08)}nav button.on span{transform:scale(1.15)}
+
+.avatar{position:relative;width:78px;height:78px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#0d9488);color:#fff;font-size:2.2rem;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(13,148,136,.4);border:3px solid #fff}
+.avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}.avedit{position:absolute;right:-4px;bottom:-4px;background:#fff;border-radius:50%;width:26px;height:26px;font-size:.8rem;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.3);font-style:normal}
+
+.topbar{position:relative}.gear{position:absolute;right:0;top:4px;background:#fff;border:0;border-radius:50%;width:42px;height:42px;font-size:1.2rem;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.hero{background:linear-gradient(180deg,#f0fdf4 0%,#fff 60%)}@media(prefers-color-scheme:dark){.hero{background:linear-gradient(180deg,#14301f,#17221b)}.gear{background:var(--card)}}
+.tile .ti i,.mchip .mi i{font-style:normal;display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.75);font-size:1.4rem}
+.mchip .mi i{width:34px;height:34px;font-size:1.1rem;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.tile{min-height:112px;justify-content:space-between}

@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { AppState, Entry, Meal, MEALS, Nut, Profile, scale, sum, today } from '../lib/types';
 import { AKTIVITE, adimKcal, hedefler, suHedefi } from '../lib/calc';
-import { hatirlatmaSaatleri, sonrakiMiktar } from '../lib/hatirlat';
+import { hatirlatmaSaatleri, sonrakiMiktar, yerel, yerelIzin } from '../lib/hatirlat';
 import { DIYABET_UYARI, HAMILE_UYARI, KARB_UYARI_ESIK, diyabetRehberi, hamileAyRehberi } from '../data/rehber';
 import { Bar, Donut, Line, Ring, Sheet, f1 } from './widgets';
 import { AddFood, Ozet } from './AddFood';
@@ -20,12 +20,12 @@ export function Home({ s, set, git, ekleAc, adimDurum }: P) {
   const su = s.water[today()] ?? 0; const [acikOgun, setAcikOgun] = useState<Meal | null>(null);
   const suEkle = (ml: number) => set(x => ({ ...x, water: { ...x.water, [today()]: Math.max(0, (x.water[today()] ?? 0) + ml) } }));
   return (<div className="page">
-    <div className="topbar"><span className="logo">🍏</span><div><b className="brand">Kalori<span>Vision</span> AI</b><small>Merhaba{p?.ad ? `, ${p.ad}` : ''} 👋</small></div></div>
+    <div className="topbar"><span className="logo">🍏</span><div><b className="brand">Kalori<span>Vision</span> AI</b><small>Merhaba{p?.ad ? `, ${p.ad}` : ''} 👋</small></div><button className="gear" onClick={() => git('profil')} aria-label="Ayarlar">⚙️</button></div>
     {!p && <div className="card warn"><b>Önce profilini oluştur</b><p>Kişisel kalori hedefin için yaş, boy ve kilonu gir.</p><button className="btn" onClick={() => git('profil')}>Profili doldur</button></div>}
     <div className="card hero center">
       <Ring value={t.kcal} max={h?.kcal ?? 0} label={`${Math.round(t.kcal)}`} sub={h ? `/ ${h.kcal.toLocaleString('tr-TR')} kcal` : 'kcal'} ikon="🔥" />
       {h && <p className="kalan">{t.kcal > h.kcal ? <>Hedefi <b className="rd">{Math.round(t.kcal - h.kcal)} kcal</b> aştın</> : <>Kalan<br /><b>{Math.round(h.kcal - t.kcal).toLocaleString('tr-TR')} kcal</b></>}</p>}
-      {h && <div className="chips3">{([['💪', 'Protein', t.p, h.p, 'p'], ['🌾', 'Karbonhidrat', t.c, h.c, 'c'], ['💧', 'Yağ', t.f, h.f, 'f']] as const).map(([ik, ad, v, mx, k]) => <div key={ad} className={'mchip ' + k}><span className="mi">{ik}</span><small>{ad}</small><b>{Math.round(v)}g</b><em>%{mx ? Math.round((v / mx) * 100) : 0}</em></div>)}</div>}
+      {h && <div className="chips3">{([['💪', 'Protein', t.p, h.p, 'p'], ['🌾', 'Karbonhidrat', t.c, h.c, 'c'], ['💧', 'Yağ', t.f, h.f, 'f']] as const).map(([ik, ad, v, mx, k]) => <div key={ad} className={'mchip ' + k}><span className="mi"><i>{ik}</i></span><small>{ad}</small><b>{Math.round(v)}g</b><em>%{mx ? Math.round((v / mx) * 100) : 0}</em></div>)}</div>}
     </div>
     <button className="cam-btn" onClick={() => git('kamera')}>📷 Yemek Tanı</button>
     {p && <div className="card"><h3>👟 Adım ve yakılan kalori</h3>
@@ -38,7 +38,7 @@ export function Home({ s, set, git, ekleAc, adimDurum }: P) {
           {t.kcal > 0 || adim > 0 ? (eksik > 80 ? <><p><b>Eksik {eksik} kcal'i tamamlamak için:</b></p>{o.map(r => <p key={r.id} className="small">{r.emoji} {r.ad} – {r.kcal} kcal, protein {r.p} g</p>)}</> : <p className="ok">Bugünkü hedefine yakınsın 👏</p>) : null}</>; })()}</div>}
     <div className="sec-h"><h3>Günlük Öğünler</h3></div>
     <div className="tiles">{MEALS.map(m => { const l = es.filter(e => e.meal === m.id); const k = Math.round(sum(l).kcal); return (
-      <button key={m.id} className={'tile ' + m.id} onClick={() => setAcikOgun(m.id)}><span className="ti">{m.ikon}</span><b>{m.ad.replace(' yemeği', ' Yemeği').replace('Ara öğün', 'Ara Öğün')}</b><span>{k ? `${k} kcal` : '– kcal'}</span></button>); })}</div>
+      <button key={m.id} className={'tile ' + m.id} onClick={() => setAcikOgun(m.id)}><span className="ti"><i>{m.ikon}</i></span><b>{m.ad.replace(' yemeği', ' Yemeği').replace('Ara öğün', 'Ara Öğün')}</b><span>{k ? `${k} kcal` : '– kcal'}</span></button>); })}</div>
     {acikOgun && <Sheet baslik={MEALS.find(m => m.id === acikOgun)!.ad} kapat={() => setAcikOgun(null)}>
       {es.filter(e => e.meal === acikOgun).map(e => <div key={e.id} className="kayit"><span>{e.ad}<small>{e.gram ? `${e.gram} g` : 'porsiyon'}</small></span><b>{Math.round(e.kcal)} kcal</b>
         <button className="x" onClick={() => set(x => ({ ...x, entries: x.entries.filter(y => y.id !== e.id) }))} aria-label="Sil">🗑</button></div>)}
@@ -141,16 +141,19 @@ export function Istatistik({ s, set }: P) {
 
 export function ProfilEkrani({ s, set }: P) {
   const bos: Profile = { ad: '', yas: 30, boy: 170, kilo: 70, cinsiyet: 'k', aktivite: 1.375, hedefKilo: 65, hedef: 'ver', alerjiler: '', tercih: '' };
-  const [p, setP] = useState<Profile>(s.profile ?? bos); const [kayit, setKayit] = useState(false); const [sil, setSil] = useState(false);
+  const [p, setP] = useState<Profile>(s.profile ?? bos);
+  const [foto, setFoto] = useState<string | null>(() => { try { return localStorage.getItem('kv-foto'); } catch { return null; } });
+  const fotoSec = (f?: File | null) => { if (!f) return; const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = c.height = 160; const k = Math.min(im.width, im.height); c.getContext('2d')!.drawImage(im, (im.width - k) / 2, (im.height - k) / 2, k, k, 0, 0, 160, 160); const u = c.toDataURL('image/jpeg', 0.8); setFoto(u); try { localStorage.setItem('kv-foto', u); } catch { /* yoksay */ } }; im.src = URL.createObjectURL(f); }; const [kayit, setKayit] = useState(false); const [sil, setSil] = useState(false);
   const h = hedefler(p); const gecerli = p.yas >= 18 && p.yas <= 100 && p.boy >= 100 && p.boy <= 230 && p.kilo >= 30 && p.kilo <= 300;
   const n = (k: keyof Profile) => (e: React.ChangeEvent<HTMLInputElement>) => setP({ ...p, [k]: +e.target.value });
   const indir = () => { const b = new Blob([JSON.stringify(s, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'kalorivision-verilerim.json'; a.click(); };
   const bildirim = async () => {
+    if (yerel()) { try { const ok = await yerelIzin(); set(x => ({ ...x, hatirlatma: ok ? !x.hatirlatma : false })); if (!ok) alert('Bildirim izni verilmedi. Telefon ayarlarından KaloriVision için bildirimleri aç.'); } catch (e) { alert('Bildirim açılamadı: ' + (e as Error).message); } return; }
     if (!('Notification' in window)) return alert('Bu tarayıcı bildirimleri desteklemiyor.');
     const r = await Notification.requestPermission(); set(x => ({ ...x, hatirlatma: r === 'granted' }));
     if (r === 'granted') new Notification('KaloriVision', { body: 'Su hatırlatması açıldı. Uygulama açıkken hatırlatır.' });
   };
-  return (<div className="page"><div className="avrow"><span className="avatar">{p.cinsiyet === 'k' ? '👩' : '👨'}</span><div><b>{p.ad || 'Profilim'}</b><small>Sağlıklı Yaşam Tutkunu</small></div></div>
+  return (<div className="page"><div className="avrow"><label className="avatar" aria-label="Profil fotoğrafı seç">{foto ? <img src={foto} alt="Profil" /> : <span>{(p.ad || 'K').trim().charAt(0).toLocaleUpperCase('tr')}</span>}<input type="file" accept="image/*" hidden onChange={e => fotoSec(e.target.files?.[0])} /><i className="avedit">📷</i></label><div><b>{p.ad || 'Profilim'}</b><small>Sağlıklı Yaşam Tutkunu · fotoğraf için dokun</small></div></div>
     <div className="card"><label className="lbl">Adın</label><input className="inp" value={p.ad} onChange={e => setP({ ...p, ad: e.target.value })} />
       <div className="grid2"><div><label className="lbl">Yaş</label><input className="inp" type="number" inputMode="numeric" value={p.yas} onChange={n('yas')} /></div><div><label className="lbl">Boy (cm)</label><input className="inp" type="number" inputMode="numeric" value={p.boy} onChange={n('boy')} /></div>
         <div><label className="lbl">Kilo (kg)</label><input className="inp" type="number" inputMode="decimal" value={p.kilo} onChange={n('kilo')} /></div><div><label className="lbl">Hedef kilo</label><input className="inp" type="number" inputMode="decimal" value={p.hedefKilo} onChange={n('hedefKilo')} /></div></div>
@@ -168,7 +171,7 @@ export function ProfilEkrani({ s, set }: P) {
     <div className="card"><h3>Su hedefi</h3><div className="row"><input className="inp" type="number" inputMode="numeric" value={s.waterGoal} onChange={e => set(x => ({ ...x, waterGoal: Math.max(500, +e.target.value || 2000) }))} /><span>ml</span></div>
       <div className="grid2"><div><label className="lbl">Başlangıç saati</label><select className="inp" value={s.suBas} onChange={e => set(x => ({ ...x, suBas: +e.target.value }))}>{Array.from({ length: 24 }, (_, i) => <option key={i} value={i}>{i}:00</option>)}</select></div><div><label className="lbl">Bitiş saati</label><select className="inp" value={s.suBit} onChange={e => set(x => ({ ...x, suBit: +e.target.value }))}>{Array.from({ length: 24 }, (_, i) => <option key={i} value={i}>{i}:00</option>)}</select></div></div>
       <label className="lbl">Kaç saatte bir</label><select className="inp" value={s.suAralik} onChange={e => set(x => ({ ...x, suAralik: +e.target.value }))}>{[1, 2, 3, 4].map(a => <option key={a} value={a}>{a} saat</option>)}</select>
-      <p className="muted small">Hatırlatma saatleri: {hatirlatmaSaatleri(s).map(h => h + ':00').join(', ') || '—'}. Bildirim, uygulama açıkken veya arka plandaki sekmede gelir. Uygulama tamamen kapalıyken bildirim APK sürümünde yerel bildirimle çalışacak.</p>
+      <p className="muted small">Hatırlatma saatleri: {hatirlatmaSaatleri(s).map(h => h + ':00').join(', ') || '—'}. {yerel() ? 'Bildirimler uygulama kapalıyken de gelir.' : 'Tarayıcıda bildirim yalnızca sayfa açıkken gelir; kapalıyken bildirim için Android uygulamasını (APK) kur.'}</p>
       <button className="btn ghost" onClick={bildirim}>{s.hatirlatma ? '🔔 Hatırlatma açık' : '🔔 Su hatırlatmasını aç'}</button></div>
     <div className="card"><h3>Verilerim</h3><p className="muted small">Verilerin yalnızca bu telefonda saklanır; hiçbir sunucuya gönderilmez. Hesap sistemi bu sürümde yerel profil olarak çalışır.</p>
       <button className="btn ghost" onClick={indir}>Verilerimi indir (JSON)</button>

@@ -4,9 +4,9 @@ export const Ring = ({ value, max, size = 170, label, sub, ikon }: { value: numb
   const over = max > 0 && value > max;
   return (
     <div className="ring" style={{ width: size, height: size }}>
-      <svg width={size} height={size} role="img" aria-label={`${label} ${sub}`}>
+      <svg width={size} height={size} role="img" aria-label={`${label} ${sub}`}><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#86efac" /><stop offset="100%" stopColor="#16a34a" /></linearGradient></defs>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--track)" strokeWidth="14" />
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={over ? 'var(--warn)' : 'var(--accent)'} strokeWidth="14" strokeLinecap="round"
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={over ? 'var(--warn)' : 'url(#rg)'} strokeWidth="16" strokeLinecap="round"
           strokeDasharray={c} strokeDashoffset={c * (1 - pct)} transform={`rotate(-90 ${size / 2} ${size / 2})`} />
       </svg>
       <div className="ring-in">{ikon && <i>{ikon}</i>}<b>{label}</b><span>{sub}</span></div>

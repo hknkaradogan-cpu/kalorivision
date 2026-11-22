@@ -3,7 +3,7 @@ import { AppState, Meal, emptyState, today } from './lib/types';
 import { load, save, wipe } from './lib/store';
 import { Beslenme, Home, Istatistik, Kamera, ProfilEkrani } from './ui/Screens';
 import { AddFood } from './ui/AddFood';
-import { kontrolEt } from './lib/hatirlat';
+import { kontrolEt, yerel, yerelPlanla } from './lib/hatirlat';
 import { useAdimSayac } from './lib/adim';
 
 const TABS = [['ana', '🏠', 'Ana Sayfa'], ['kamera', '📷', 'Kamera'], ['beslenme', '🍽️', 'Beslenme'], ['istatistik', '📊', 'İstatistik'], ['profil', '👤', 'Profil']] as const;
@@ -15,6 +15,7 @@ export default function App() {
   // Su hatırlatması: uygulama/sekme canlıyken saatinde bildirir (kapalıyken bildirim APK sürümünde yerel bildirimle gelecek)
   const sRef = useRef(s); sRef.current = s;
   useEffect(() => { const t = setInterval(() => { if (sRef.current) kontrolEt(sRef.current); }, 60000); const v = () => { if (sRef.current) kontrolEt(sRef.current); }; document.addEventListener('visibilitychange', v); return () => { clearInterval(t); document.removeEventListener('visibilitychange', v); }; }, []);
+  useEffect(() => { if (s && yerel()) yerelPlanla(s).catch(e => console.error('Bildirim planlanamadı', e)); }, [s?.hatirlatma, s?.suBas, s?.suBit, s?.suAralik, s?.waterGoal]);
   const adimEkle = useCallback((n: number) => setS(p => (p ? { ...p, steps: { ...p.steps, [today()]: (p.steps[today()] ?? 0) + n } } : p)), []);
   const adimDurum = useAdimSayac(!!s?.profile, adimEkle);
   const set = useCallback((f: (x: AppState) => AppState) => setS(p => (p ? f(p) : p)), []);

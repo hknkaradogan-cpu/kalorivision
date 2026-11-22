@@ -28,3 +28,20 @@ export function kontrolEt(s: AppState) {
   const m = sonrakiMiktar(s, saat);
   bildir('💧 Su içme zamanı', `Şimdi ${m} ml su içmelisin. Bugün ${icilen}/${s.waterGoal} ml içtin.`);
 }
+
+// ---- Android uygulaması (APK): uygulama kapalıyken de çalışan yerel bildirimler ----
+export const yerel = () => !!(window as any).Capacitor?.isNativePlatform?.();
+export async function yerelIzin(): Promise<boolean> {
+  const { LocalNotifications } = await import('@capacitor/local-notifications');
+  const r = await LocalNotifications.requestPermissions(); return r.display === 'granted';
+}
+export async function yerelPlanla(s: AppState) {
+  const { LocalNotifications } = await import('@capacitor/local-notifications');
+  const bek = await LocalNotifications.getPending(); if (bek.notifications.length) await LocalNotifications.cancel(bek);
+  if (!s.hatirlatma) return;
+  const saatler = hatirlatmaSaatleri(s); const ml = Math.max(100, Math.round(s.waterGoal / (saatler.length || 1) / 50) * 50);
+  await LocalNotifications.schedule({ notifications: saatler.map((h, i) => ({
+    id: 100 + i, title: '💧 Su içme zamanı', body: `Şimdi yaklaşık ${ml} ml su içmelisin. Günlük hedefin ${s.waterGoal} ml.`,
+    schedule: { on: { hour: h, minute: 0 }, allowWhileIdle: true },
+  })) });
+}
