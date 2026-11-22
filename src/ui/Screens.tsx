@@ -20,7 +20,7 @@ export function Home({ s, set, git, ekleAc, adimDurum }: P) {
   const su = s.water[today()] ?? 0; const [acikOgun, setAcikOgun] = useState<Meal | null>(null);
   const suEkle = (ml: number) => set(x => ({ ...x, water: { ...x.water, [today()]: Math.max(0, (x.water[today()] ?? 0) + ml) } }));
   return (<div className="page">
-    <div className="topbar"><span className="logo"><img src={'./profil.png'} alt="" width={44} height={44} style={{ borderRadius: 12 }} /></span><div><b className="brand">Kalori<span>Vision</span> AI</b><small>Merhaba{p?.ad ? `, ${p.ad}` : ''} 👋 · By-Hkn</small></div><button className="gear" onClick={() => git('profil')} aria-label="Ayarlar">⚙️</button></div>
+    <div className="topbar"><span className="logo"><img src={'./profil.png'} alt="" width={44} height={44} style={{ borderRadius: 12 }} /></span><div><b className="brand">Kalori<span>Vision</span> AI</b><small>Merhaba{p?.ad ? `, ${p.ad}` : ''} 👋</small></div><span className="byhkn">By-Hkn</span><button className="gear" onClick={() => git('profil')} aria-label="Ayarlar">⚙️</button></div>
     {!p && <div className="card warn"><b>Önce profilini oluştur</b><p>Kişisel kalori hedefin için yaş, boy ve kilonu gir.</p><button className="btn" onClick={() => git('profil')}>Profili doldur</button></div>}
     <div className="card hero center">
       <Ring value={t.kcal} max={h?.kcal ?? 0} label={`${Math.round(t.kcal)}`} sub={h ? `/ ${h.kcal.toLocaleString('tr-TR')} kcal` : 'kcal'} ikon="🔥" />
