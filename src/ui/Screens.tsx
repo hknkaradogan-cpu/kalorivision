@@ -3,7 +3,7 @@ import { AppState, Entry, Meal, MEALS, Nut, Profile, scale, sum, today } from '.
 import { AKTIVITE, adimKcal, hedefler, suHedefi } from '../lib/calc';
 import { hatirlatmaSaatleri, sonrakiMiktar } from '../lib/hatirlat';
 import { DIYABET_UYARI, HAMILE_UYARI, KARB_UYARI_ESIK, diyabetRehberi, hamileAyRehberi } from '../data/rehber';
-import { Bar, Donut, Line, Ring, f1 } from './widgets';
+import { Bar, Donut, Line, Ring, Sheet, f1 } from './widgets';
 import { AddFood, Ozet } from './AddFood';
 import { Food } from '../data/foods';
 import { Tahmin, yemekTani } from '../lib/vision';
@@ -16,16 +16,17 @@ const gunKcal = (es: Entry[]) => sum(es);
 
 export function Home({ s, set, git, ekleAc, adimDurum }: P) {
   const p = s.profile; const h = p ? hedefler(p) : undefined; const es = s.entries.filter(e => e.date === today()); const t = sum(es);
-  const su = s.water[today()] ?? 0;
+  const su = s.water[today()] ?? 0; const [acikOgun, setAcikOgun] = useState<Meal | null>(null);
   const suEkle = (ml: number) => set(x => ({ ...x, water: { ...x.water, [today()]: Math.max(0, (x.water[today()] ?? 0) + ml) } }));
   return (<div className="page">
-    <h1>Merhaba{p?.ad ? `, ${p.ad}` : ''} 👋</h1>
+    <div className="topbar"><span className="logo">🍏</span><div><b className="brand">Kalori<span>Vision</span> AI</b><small>Merhaba{p?.ad ? `, ${p.ad}` : ''} 👋</small></div></div>
     {!p && <div className="card warn"><b>Önce profilini oluştur</b><p>Kişisel kalori hedefin için yaş, boy ve kilonu gir.</p><button className="btn" onClick={() => git('profil')}>Profili doldur</button></div>}
-    <div className="card center">
-      <Ring value={t.kcal} max={h?.kcal ?? 0} label={`${Math.round(t.kcal)}`} sub={h ? `/ ${h.kcal} kcal` : 'kcal'} />
-      {h && <p className="muted">{t.kcal > h.kcal ? `Hedefi ${Math.round(t.kcal - h.kcal)} kcal aştın` : `Kalan: ${Math.round(h.kcal - t.kcal)} kcal`}</p>}
+    <div className="card hero center">
+      <Ring value={t.kcal} max={h?.kcal ?? 0} label={`${Math.round(t.kcal)}`} sub={h ? `/ ${h.kcal.toLocaleString('tr-TR')} kcal` : 'kcal'} ikon="🔥" />
+      {h && <p className="kalan">{t.kcal > h.kcal ? <>Hedefi <b className="rd">{Math.round(t.kcal - h.kcal)} kcal</b> aştın</> : <>Kalan<br /><b>{Math.round(h.kcal - t.kcal).toLocaleString('tr-TR')} kcal</b></>}</p>}
+      {h && <div className="chips3">{([['💪', 'Protein', t.p, h.p, 'p'], ['🌾', 'Karbonhidrat', t.c, h.c, 'c'], ['💧', 'Yağ', t.f, h.f, 'f']] as const).map(([ik, ad, v, mx, k]) => <div key={ad} className={'mchip ' + k}><span className="mi">{ik}</span><small>{ad}</small><b>{Math.round(v)}g</b><em>%{mx ? Math.round((v / mx) * 100) : 0}</em></div>)}</div>}
     </div>
-    <button className="cam-btn" onClick={() => git('kamera')}>📷 Yemeğin fotoğrafını çek</button>
+    <button className="cam-btn" onClick={() => git('kamera')}>📷 Yemek Tanı</button>
     {p && <div className="card"><h3>👟 Adım ve yakılan kalori</h3>
       {(() => { const adim = s.steps[today()] ?? 0; const yak = adimKcal(adim, p.kilo); const eksik = h ? Math.round(h.kcal + yak - t.kcal) : 0; const o = h ? oner(eksik, h.p - t.p, p).slice(0, 3) : [];
         return <><div className="grid4"><span>Adım<b>{adim}</b></span><span>Yakılan<b>{yak} kcal</b></span><span>Eksik kalori<b>{Math.max(0, eksik)} kcal</b></span></div>
@@ -34,11 +35,14 @@ export function Home({ s, set, git, ekleAc, adimDurum }: P) {
           {adimDurum === 'izinsiz' && <p className="muted small">Hareket sensörü izni verilmedi.</p>}
           <p className="muted small">Adımlar telefon hareket sensöründen sayılır ve yalnızca uygulama açıkken sayar; değer yaklaşıktır (arka planda sayma APK sürümünde olacak).</p>
           {t.kcal > 0 || adim > 0 ? (eksik > 80 ? <><p><b>Eksik {eksik} kcal'i tamamlamak için:</b></p>{o.map(r => <p key={r.id} className="small">{r.emoji} {r.ad} – {r.kcal} kcal, protein {r.p} g</p>)}</> : <p className="ok">Bugünkü hedefine yakınsın 👏</p>) : null}</>; })()}</div>}
-    {h && <div className="card"><h3>Makrolar</h3><Bar ad="Protein" v={t.p} max={h.p} renk="var(--p)" /><Bar ad="Karbonhidrat" v={t.c} max={h.c} renk="var(--c)" /><Bar ad="Yağ" v={t.f} max={h.f} renk="var(--f)" /></div>}
-    <div className="card"><h3>Öğünler</h3>{MEALS.map(m => { const l = es.filter(e => e.meal === m.id); return (
-      <div key={m.id} className="ogun"><div className="ogun-h"><span>{m.ikon} {m.ad}</span><span>{Math.round(sum(l).kcal)} kcal</span><button className="btn sm" onClick={() => ekleAc(m.id)} aria-label={`${m.ad} ekle`}>＋</button></div>
-        {l.map(e => <div key={e.id} className="kayit"><span>{e.ad}<small>{e.gram} g</small></span><b>{Math.round(e.kcal)}</b>
-          <button className="x" onClick={() => set(x => ({ ...x, entries: x.entries.filter(y => y.id !== e.id) }))} aria-label="Sil">🗑</button></div>)}</div>); })}</div>
+    <div className="sec-h"><h3>Günlük Öğünler</h3></div>
+    <div className="tiles">{MEALS.map(m => { const l = es.filter(e => e.meal === m.id); const k = Math.round(sum(l).kcal); return (
+      <button key={m.id} className={'tile ' + m.id} onClick={() => setAcikOgun(m.id)}><span className="ti">{m.ikon}</span><b>{m.ad.replace(' yemeği', ' Yemeği').replace('Ara öğün', 'Ara Öğün')}</b><span>{k ? `${k} kcal` : '– kcal'}</span></button>); })}</div>
+    {acikOgun && <Sheet baslik={MEALS.find(m => m.id === acikOgun)!.ad} kapat={() => setAcikOgun(null)}>
+      {es.filter(e => e.meal === acikOgun).map(e => <div key={e.id} className="kayit"><span>{e.ad}<small>{e.gram ? `${e.gram} g` : 'porsiyon'}</small></span><b>{Math.round(e.kcal)} kcal</b>
+        <button className="x" onClick={() => set(x => ({ ...x, entries: x.entries.filter(y => y.id !== e.id) }))} aria-label="Sil">🗑</button></div>)}
+      {!es.some(e => e.meal === acikOgun) && <p className="muted">Bu öğüne henüz bir şey eklenmedi.</p>}
+      <button className="btn" onClick={() => { const m = acikOgun; setAcikOgun(null); ekleAc(m); }}>＋ Yiyecek ekle</button></Sheet>}
     <div className="card"><h3>💧 Su</h3><div className="su"><b>{su} ml</b><span className="muted"> / {s.waterGoal} ml</span></div>
       <div className="bar-t"><div className="bar-f" style={{ width: `${Math.min(100, (su / s.waterGoal) * 100)}%`, background: 'var(--c2)' }} /></div>
       {s.hatirlatma && <p className="muted small">Sıradaki hatırlatmada yaklaşık {sonrakiMiktar(s, new Date().getHours())} ml içmelisin.</p>}
@@ -66,21 +70,23 @@ export function Kamera({ s, set, git }: P) {
     <input ref={gal} type="file" accept="image/*" hidden onChange={e => { sec(e.target.files?.[0]); e.target.value = ''; }} />
     <div className="row"><button className="btn" onClick={() => cam.current?.click()}>📷 Fotoğraf çek</button><button className="btn ghost" onClick={() => gal.current?.click()}>🖼️ Galeriden seç</button></div>
     <p className="muted small">Fotoğraf cihazında işlenir, dışarı gönderilmez. İlk kullanımda yapay zekâ modeli indirilir (internet gerekir).</p>
-    {img && <img src={img} className="foto" alt="Seçilen yemek" />}
-    {dur && <div className="card center"><div className="spin" /><p>{dur}</p></div>}
+    {!img && <div className="scan"><i className="c1" /><i className="c2" /><i className="c3" /><i className="c4" /><span>🍽️</span><p>Yemeğini çerçevenin içine al</p></div>}
+    {img && <div className="scan has"><img src={img} className="foto" alt="Seçilen yemek" /><i className="c1" /><i className="c2" /><i className="c3" /><i className="c4" /></div>}
+    {dur && <div className="card center"><div className="spin" /><p><b>Fotoğraf analiz ediliyor…</b><br /><small>{dur}</small></p><div className="pbar"><i /></div></div>}
     {hata && <div className="card warn"><p>{hata}</p><button className="btn" onClick={() => ekleAc2(setEkle)}>Elle ara</button></div>}
     {liste && liste.length > 0 && <div className="card"><h3>Tanınan yiyecekler</h3>
       <p className="muted small">Bunlar <b>tahmindir</b>. Doğru değilse işareti kaldır; gramajı sen düzelt. Porsiyon fotoğraftan kesin hesaplanamaz.</p>
-      {liste.map((x, i) => <div key={x.food.id} className="tani"><label><input type="checkbox" checked={x.sec} onChange={e => setListe(liste.map((y, j) => j === i ? { ...y, sec: e.target.checked } : y))} /> {x.food.ad}<small> %{Math.round(Math.min(1, x.skor) * 100)} güven</small></label>
+      {liste.map((x, i) => <div key={x.food.id} className="tani"><label><span className="fe">{emojiOf(x.food.kat)}</span><input type="checkbox" checked={x.sec} onChange={e => setListe(liste.map((y, j) => j === i ? { ...y, sec: e.target.checked } : y))} /> {x.food.ad}<small> %{Math.round(Math.min(1, x.skor) * 100)} güven</small></label>
         <div className="row"><input className="inp g" type="number" inputMode="decimal" value={x.gram} min={1} onChange={e => setListe(liste.map((y, j) => j === i ? { ...y, gram: +e.target.value } : y))} /><span>g</span><b>{Math.round(scale(x.food, true, x.gram || 0).kcal)} kcal</b></div></div>)}
-      <div className="ozet"><div className="big">{Math.round(toplam.kcal)}<small> kcal toplam</small></div><div className="center"><Donut p={toplam.p} c={toplam.c} f={toplam.f} /><p className="muted small"><span className="dot p" />Protein {f1(toplam.p)} g · <span className="dot c" />Karb. {f1(toplam.c)} g · <span className="dot f" />Yağ {f1(toplam.f)} g</p></div></div>
+      <div className="total"><span>🔥</span><b>Toplam Kalori</b><em>{Math.round(toplam.kcal)} kcal</em></div><div className="row donutrow"><Donut p={toplam.p} c={toplam.c} f={toplam.f} /><div className="grow small">{(() => { const tt = toplam.p * 4 + toplam.c * 4 + toplam.f * 9 || 1; return <><p><span className="dot p" />Protein <b>%{Math.round(toplam.p * 4 / tt * 100)}</b></p><p><span className="dot c" />Karbonhidrat <b>%{Math.round(toplam.c * 4 / tt * 100)}</b></p><p><span className="dot f" />Yağ <b>%{Math.round(toplam.f * 9 / tt * 100)}</b></p></>; })()}</div></div>
       <div className="seg">{MEALS.map(m => <button key={m.id} className={ogun === m.id ? 'on' : ''} onClick={() => setOgun(m.id)}>{m.ikon}</button>)}</div>
-      {tamam ? <><p className="ok">✓ Eklendi</p><button className="btn" onClick={() => git('ana')}>Ana sayfaya git</button></> : <button className="btn" disabled={!secili.length} onClick={hepsiEkle}>Öğüne ekle</button>}
-      <button className="btn ghost" onClick={() => setEkle(true)}>Eksik yiyecek ekle</button></div>}
+      {tamam ? <><p className="ok">✓ Kaydedildi</p><button className="btn" onClick={() => git('ana')}>Ana sayfaya git</button></> : <button className="btn" disabled={!secili.length} onClick={hepsiEkle}>✓ Kaydet</button>}
+      <div className="row"><button className="btn ghost" onClick={() => { setImg(null); setListe(null); setTamam(false); cam.current?.click(); }}>🔄 Tekrar Tara</button><button className="btn ghost" onClick={() => setEkle(true)}>＋ Eksik yiyecek</button></div></div>}
     {!img && <button className="btn ghost" onClick={() => setEkle(true)}>Elle ara / barkod</button>}
     {ekle && <AddFood meal={ogun} kapat={() => setEkle(false)} ekle={e => set(x => ({ ...x, entries: [...x.entries, e] }))} />}
   </div>);
 }
+const emojiOf = (k: string) => ({ 'Kahvaltı': '🍳', 'Fırın': '🥐', 'Hamur işi': '🥟', 'Et': '🍗', 'Yemek': '🍛', 'Çorba': '🥣', 'Zeytinyağlı': '🥬', 'Fast food': '🍔', 'Meze': '🥙', 'Salata': '🥗', 'Süt': '🥛', 'İçecek': '🥤', 'Tatlı': '🍰', 'Atıştırmalık': '🍪', 'Meyve': '🍎', 'Sebze': '🥦', 'Kuruyemiş': '🥜', 'Dünya': '🍣' } as Record<string, string>)[k] ?? '🍽️';
 const ekleAc2 = (f: (b: boolean) => void) => f(true);
 
 export function Beslenme({ s, set }: P) {
@@ -98,7 +104,7 @@ export function Beslenme({ s, set }: P) {
       <p className="muted small">Değerler yaklaşık hesaplanmıştır. Tarif görselleri yerine simge kullanılır.</p></div>
     {p?.hamile && p.cinsiyet === 'k' && <div className="card"><h3>🤰 Hamilelik rehberi</h3><p className="small muted">{HAMILE_UYARI}</p>{hamileAyRehberi(p.hamileAy ?? 1).map(b => <div key={b.baslik}><b>{b.baslik}</b><ul className="small">{b.maddeler.map(m => <li key={m}>{m}</li>)}</ul></div>)}</div>}
     {p?.diyabet && <div className="card"><h3>🩸 Diyabet rehberi</h3><p className="small muted">{DIYABET_UYARI}</p>{(() => { const ogunKarb = MEALS.map(m => ({ m, k: sum(s.entries.filter(e => e.date === today() && e.meal === m.id)).c })).filter(x => x.k > KARB_UYARI_ESIK); return ogunKarb.length ? <p className="warnx">⚠️ {ogunKarb.map(x => `${x.m.ad}: ${Math.round(x.k)} g karbonhidrat`).join(', ')} – bir öğün için yüksek olabilir ({KARB_UYARI_ESIK} g referans). Doktorunun belirlediği miktara bak.</p> : null; })()}{diyabetRehberi.map(b => <div key={b.baslik}><b>{b.baslik}</b><ul className="small">{b.maddeler.map(m => <li key={m}>{m}</li>)}</ul></div>)}</div>}
-    <div className="card"><h3>💬 Beslenme asistanı</h3><div className="chat">{sohbet.map((c, i) => <div key={i} className={c.k ? 'm me' : 'm'}>{c.m}</div>)}</div>
+    <div className="card"><div className="bot"><span className="botav">🤖</span><div><b>Beslenme Asistanı</b><small className="onl">● Çevrimiçi</small></div></div><div className="chat">{sohbet.map((c, i) => <div key={i} className={c.k ? 'm me' : 'm'}>{c.m}</div>)}</div>
       <div className="row wrap">{['Bugün kaç kalori aldım?', 'Akşam ne yemeliyim?', 'Protein ihtiyacımı karşılıyor muyum?', 'Bugünkü beslenmem dengeli mi?'].map(q => <button key={q} className="chip" onClick={() => gonder(q)}>{q}</button>)}</div>
       <form className="row" onSubmit={e => { e.preventDefault(); gonder(sor); }}><input className="inp" value={sor} onChange={e => setSor(e.target.value)} placeholder="Bir soru yaz…" /><button className="btn sm">Gönder</button></form>
       <p className="muted small">Asistan cihazında çalışır, tıbbi teşhis koymaz.</p></div>
@@ -107,15 +113,16 @@ export function Beslenme({ s, set }: P) {
 }
 
 export function Istatistik({ s, set }: P) {
-  const p = s.profile; const h = p ? hedefler(p) : undefined;
-  const gunler = useMemo(() => Array.from({ length: 7 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - (6 - i)); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }), []);
-  const veri = gunler.map(g => ({ g, k: Math.round(gunKcal(s.entries.filter(e => e.date === g)).kcal), su: s.water[g] ?? 0 }));
+  const p = s.profile; const h = p ? hedefler(p) : undefined; const [aralik, setAralik] = useState<'h' | 'a' | 'y'>('h');
+  const gunler = useMemo(() => Array.from({ length: aralik === 'h' ? 7 : aralik === 'a' ? 30 : 12 }, (_, i) => { const n = aralik === 'h' ? 7 : aralik === 'a' ? 30 : 12; const d = new Date(); if (aralik === 'y') d.setMonth(d.getMonth() - (n - 1 - i), 1); else d.setDate(d.getDate() - (n - 1 - i)); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }), [aralik]);
+  const veri = gunler.map(g => aralik === 'y' ? { g, k: (() => { const ay = g.slice(0, 7); const gl = new Set(s.entries.filter(e => e.date.startsWith(ay)).map(e => e.date)); return gl.size ? Math.round(gunKcal(s.entries.filter(e => e.date.startsWith(ay))).kcal / gl.size) : 0; })(), su: 0 } : { g, k: Math.round(gunKcal(s.entries.filter(e => e.date === g)).kcal), su: s.water[g] ?? 0 });
   const max = Math.max(...veri.map(v => v.k), h?.kcal ?? 0, 1); const [kg, setKg] = useState('');
   const w = [...s.weights].sort((a, b) => a.date.localeCompare(b.date)); const ilk = w[0]?.kg ?? p?.kilo; const son = w[w.length - 1]?.kg ?? p?.kilo;
   const hafta = (() => { if (w.length < 2) return undefined; const sonT = new Date(w[w.length - 1].date).getTime(); const eski = [...w].reverse().find(x => sonT - new Date(x.date).getTime() >= 6 * 864e5); return eski ? Math.round((son! - eski.kg) * 10) / 10 : undefined; })();
   const bugun = sum(s.entries.filter(e => e.date === today()));
   return (<div className="page"><h1>İstatistik</h1>
-    <div className="card"><h3>Son 7 gün kalori</h3><div className="cols">{veri.map(v => <div key={v.g} className="col"><div className="col-b"><div style={{ height: `${(v.k / max) * 100}%` }} className={h && v.k > h.kcal ? 'over' : ''} /></div><small>{v.g.slice(8)}</small><small>{v.k}</small></div>)}</div>
+    <div className="seg tabs">{([['h', 'Haftalık'], ['a', 'Aylık'], ['y', 'Yıllık']] as const).map(([k, l]) => <button key={k} className={aralik === k ? 'on' : ''} onClick={() => setAralik(k)}>{l}</button>)}</div>
+    <div className="card"><h3>Kalori Grafiği {aralik === 'y' && <small>(aylık günlük ortalama)</small>}</h3><div className="cols">{veri.map(v => <div key={v.g} className="col"><div className="col-b"><div style={{ height: `${(v.k / max) * 100}%` }} className={h && v.k > h.kcal ? 'over' : ''} /></div><small>{aralik === 'y' ? v.g.slice(5, 7) : v.g.slice(8)}</small>{aralik !== 'a' && <small>{v.k}</small>}</div>)}</div>
       {h && <p className="muted small">Günlük hedef: {h.kcal} kcal</p>}</div>
     <div className="card"><h3>Bugünün makroları</h3><div className="row"><Donut p={bugun.p} c={bugun.c} f={bugun.f} /><div className="grow small"><p><span className="dot p" />Protein {f1(bugun.p)} g</p><p><span className="dot c" />Karbonhidrat {f1(bugun.c)} g</p><p><span className="dot f" />Yağ {f1(bugun.f)} g</p><p>Lif {f1(bugun.lif)} g · Şeker {f1(bugun.seker)} g · Tuz {f1(bugun.tuz)} g</p></div></div></div>
     <div className="card"><h3>💧 Su (son 7 gün)</h3><div className="cols">{veri.map(v => <div key={v.g} className="col"><div className="col-b"><div style={{ height: `${Math.min(100, (v.su / s.waterGoal) * 100)}%`, background: 'var(--c2)' }} /></div><small>{v.g.slice(8)}</small><small>{v.su}</small></div>)}</div></div>
@@ -138,7 +145,7 @@ export function ProfilEkrani({ s, set }: P) {
     const r = await Notification.requestPermission(); set(x => ({ ...x, hatirlatma: r === 'granted' }));
     if (r === 'granted') new Notification('KaloriVision', { body: 'Su hatırlatması açıldı. Uygulama açıkken hatırlatır.' });
   };
-  return (<div className="page"><h1>Profil</h1>
+  return (<div className="page"><div className="avrow"><span className="avatar">{p.cinsiyet === 'k' ? '👩' : '👨'}</span><div><b>{p.ad || 'Profilim'}</b><small>Sağlıklı Yaşam Tutkunu</small></div></div>
     <div className="card"><label className="lbl">Adın</label><input className="inp" value={p.ad} onChange={e => setP({ ...p, ad: e.target.value })} />
       <div className="grid2"><div><label className="lbl">Yaş</label><input className="inp" type="number" inputMode="numeric" value={p.yas} onChange={n('yas')} /></div><div><label className="lbl">Boy (cm)</label><input className="inp" type="number" inputMode="numeric" value={p.boy} onChange={n('boy')} /></div>
         <div><label className="lbl">Kilo (kg)</label><input className="inp" type="number" inputMode="decimal" value={p.kilo} onChange={n('kilo')} /></div><div><label className="lbl">Hedef kilo</label><input className="inp" type="number" inputMode="decimal" value={p.hedefKilo} onChange={n('hedefKilo')} /></div></div>

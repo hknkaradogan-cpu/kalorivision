@@ -1,5 +1,5 @@
 import React from 'react';
-export const Ring = ({ value, max, size = 170, label, sub }: { value: number; max: number; size?: number; label: string; sub: string }) => {
+export const Ring = ({ value, max, size = 170, label, sub, ikon }: { value: number; max: number; size?: number; label: string; sub: string; ikon?: string }) => {
   const r = size / 2 - 12, c = 2 * Math.PI * r, pct = max > 0 ? Math.min(1, value / max) : 0;
   const over = max > 0 && value > max;
   return (
@@ -9,7 +9,7 @@ export const Ring = ({ value, max, size = 170, label, sub }: { value: number; ma
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={over ? 'var(--warn)' : 'var(--accent)'} strokeWidth="14" strokeLinecap="round"
           strokeDasharray={c} strokeDashoffset={c * (1 - pct)} transform={`rotate(-90 ${size / 2} ${size / 2})`} />
       </svg>
-      <div className="ring-in"><b>{label}</b><span>{sub}</span></div>
+      <div className="ring-in">{ikon && <i>{ikon}</i>}<b>{label}</b><span>{sub}</span></div>
     </div>
   );
 };
