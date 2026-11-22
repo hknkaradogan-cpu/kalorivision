@@ -5,11 +5,13 @@ import { Beslenme, Home, Istatistik, Kamera, ProfilEkrani } from './ui/Screens';
 import { AddFood } from './ui/AddFood';
 import { kontrolEt, yerel, yerelPlanla } from './lib/hatirlat';
 import { useAdimSayac } from './lib/adim';
+import { Guncelleme, guncellemeVarMi, guncelle } from './lib/surum';
 
 const TABS = [['ana', '🏠', 'Ana Sayfa'], ['kamera', '📷', 'Kamera'], ['beslenme', '🍽️', 'Beslenme'], ['istatistik', '📊', 'İstatistik'], ['profil', '👤', 'Profil']] as const;
 export default function App() {
   const [s, setS] = useState<AppState | null>(null); const [tab, setTab] = useState<string>('ana'); const [ekle, setEkle] = useState<Meal | null>(null);
-  const ilk = useRef(true);
+  const ilk = useRef(true); const [gun, setGun] = useState<Guncelleme | null>(null); const [gizle, setGizle] = useState(false);
+  useEffect(() => { guncellemeVarMi().then(setGun); }, []);
   useEffect(() => { load().then(x => { setS(x); if (!x.profile) setTab('profil'); }); }, []);
   useEffect(() => { if (s) { if (ilk.current) { ilk.current = false; return; } save(s); } }, [s]);
   // Su hatırlatması: uygulama/sekme canlıyken saatinde bildirir (kapalıyken bildirim APK sürümünde yerel bildirimle gelecek)
@@ -24,6 +26,7 @@ export default function App() {
   return (<div className="app">
     <main>{tab === 'ana' && <Home {...P} />}{tab === 'kamera' && <Kamera {...P} />}{tab === 'beslenme' && <Beslenme {...P} />}{tab === 'istatistik' && <Istatistik {...P} />}{tab === 'profil' && <ProfilEkrani {...P} />}</main>
     <nav>{TABS.map(([id, ik, ad]) => <button key={id} className={tab === id ? 'on' : ''} onClick={() => setTab(id)} aria-label={ad}><span>{ik}</span><small>{ad}</small></button>)}</nav>
+    {gun && !gizle && <div className="upd-bg"><div className="upd" role="dialog" aria-label="Güncelleme"><div className="upd-e">🥳</div><h3>Uygulama içi bir güncellemen var!</h3><p>{gun.not}</p><button className="btn" onClick={() => guncelle(gun)}>Güncelle</button><button className="btn ghost" onClick={() => setGizle(true)}>Sonra</button></div></div>}
     {ekle && <AddFood meal={ekle} kapat={() => setEkle(null)} ekle={e => set(x => ({ ...x, entries: [...x.entries, e] }))} />}
   </div>);
 }
