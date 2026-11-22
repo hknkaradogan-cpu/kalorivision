@@ -10,6 +10,6 @@ export function baglam(s: AppState): string {
     'Bugünkü yiyecekler: ' + s.entries.filter(e => e.date === today()).map(e => `${e.ad} ${Math.round(e.kcal)} kcal`).join(', '), `Adım: ${s.steps[today()] ?? 0}, su: ${s.water[today()] ?? 0} ml`].filter(Boolean).join('\n');
 }
 export async function yzSor(mesajlar: { k: boolean; m: string }[], s: AppState): Promise<string> {
-  const r = await fetch(ASISTAN_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mesajlar, baglam: baglam(s) }) });
+  const r = await fetch(ASISTAN_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mesajlar, baglam: baglam(s) }), signal: AbortSignal.timeout(30000) });
   const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.hata || 'Asistan yanıt vermedi'); return j.cevap;
 }

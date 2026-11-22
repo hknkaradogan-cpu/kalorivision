@@ -63,7 +63,7 @@ function Barkod({ sec }: { sec: (u: UrunBilgi) => void }) {
   const ara = async (k: string) => {
     setDurum('Aranıyor…'); setU(null);
     try { const r = await barkodAra(k.trim()); if (!r) setDurum('Ürün Open Food Facts veritabanında bulunamadı. "Elle" sekmesinden ekleyebilirsin.'); else { setU(r); setDurum(''); } }
-    catch { setDurum('İnternet bağlantısı yok veya servis yanıt vermedi. Barkod araması için internet gerekir.'); }
+    catch (e) { setDurum('Ürün servisine ulaşılamadı (' + ((e as Error).message || 'bağlantı hatası') + '). İnterneti kontrol edip tekrar dene.'); }
   };
   const baslat = async () => {
     try {
