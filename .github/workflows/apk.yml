@@ -22,6 +22,8 @@ jobs:
           grep -n "uses-permission" $M
       - name: Uygulama ikonu
         run: cp -r android-res/* android/app/src/main/res/
+      - name: Yerel adım sayar eklentisi
+        run: cp android-native/*.java android/app/src/main/java/com/kalorivision/app/ && ls android/app/src/main/java/com/kalorivision/app/
       - run: npx cap sync android
       - name: Sabit imza (güncellemeler üstüne kurulsun)
         run: mkdir -p ~/.android && cp keystore/debug.keystore ~/.android/debug.keystore

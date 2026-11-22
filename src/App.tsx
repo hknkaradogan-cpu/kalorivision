@@ -19,7 +19,8 @@ export default function App() {
   useEffect(() => { const t = setInterval(() => { if (sRef.current) kontrolEt(sRef.current); }, 60000); const v = () => { if (sRef.current) kontrolEt(sRef.current); }; document.addEventListener('visibilitychange', v); return () => { clearInterval(t); document.removeEventListener('visibilitychange', v); }; }, []);
   useEffect(() => { if (s && yerel()) yerelPlanla(s).catch(e => console.error('Bildirim planlanamadı', e)); }, [s?.hatirlatma, s?.suBas, s?.suBit, s?.suAralik, s?.waterGoal]);
   const adimEkle = useCallback((n: number) => setS(p => (p ? { ...p, steps: { ...p.steps, [today()]: (p.steps[today()] ?? 0) + n } } : p)), []);
-  const adimDurum = useAdimSayac(!!s?.profile, adimEkle);
+  const adimAyarla = useCallback((n: number) => setS(p => (p && (p.steps[today()] ?? 0) !== n ? { ...p, steps: { ...p.steps, [today()]: n } } : p)), []);
+  const adimDurum = useAdimSayac(!!s?.profile, adimEkle, adimAyarla);
   const set = useCallback((f: (x: AppState) => AppState) => setS(p => (p ? f(p) : p)), []);
   if (!s) return <div className="load">Yükleniyor…</div>;
   const P = { s, set, git: setTab, ekleAc: setEkle, adimDurum };

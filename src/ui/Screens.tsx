@@ -33,8 +33,8 @@ export function Home({ s, set, git, ekleAc, adimDurum }: P) {
         return <><div className="grid4"><span>Adım<b>{adim}</b></span><span>Yakılan<b>{yak} kcal</b></span><span>Eksik kalori<b>{Math.max(0, eksik)} kcal</b></span></div>
           <div className="row"><button className="btn sm ghost" onClick={() => { const v = prompt('Bugünkü toplam adım sayını yaz'); const n = parseInt(v ?? '', 10); if (n >= 0 && n < 100000) set(x => ({ ...x, steps: { ...x.steps, [today()]: n } })); }}>Adımı elle gir</button></div>
           {adimDurum === 'yok' && <p className="muted small">Bu cihaz adım sensörünü desteklemiyor, adımı elle girebilirsin.</p>}
-          {adimDurum === 'izinsiz' && <p className="muted small">Hareket sensörü izni verilmedi.</p>}
-          <p className="muted small">Adımlar telefon hareket sensöründen sayılır ve yalnızca uygulama açıkken sayar; değer yaklaşıktır (arka planda sayma APK sürümünde olacak).</p>
+          {adimDurum === 'izinsiz' && <p className="muted small">Adım sayar için “Fiziksel aktivite” iznini ver (Ayarlar → Uygulamalar → KaloriVision → İzinler).</p>}
+          <p className="muted small">Adımlar telefonun adım sensöründen okunur; değer yaklaşıktır. APK'da uygulama kapalıyken de sayılır.</p>
           {t.kcal > 0 || adim > 0 ? (eksik > 80 ? <><p><b>Eksik {eksik} kcal'i tamamlamak için:</b></p>{o.map(r => <p key={r.id} className="small">{r.emoji} {r.ad} – {r.kcal} kcal, protein {r.p} g</p>)}</> : <p className="ok">Bugünkü hedefine yakınsın 👏</p>) : null}</>; })()}</div>}
     <div className="sec-h"><h3>Günlük Öğünler</h3><button className="lnk" onClick={() => setAcikOgun('tum' as unknown as Meal)}>Tümünü Gör ›</button></div>
     <div className="tiles">{MEALS.map(m => { const l = es.filter(e => e.meal === m.id); const k = Math.round(sum(l).kcal); return (

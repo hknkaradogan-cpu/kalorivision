@@ -10,7 +10,7 @@ function kucult(img: HTMLImageElement, max = 768): string {
 }
 export async function yemekTani(img: HTMLImageElement, onP?: Ilerleme): Promise<Tahmin[]> {
   onP?.('Fotoğraf yapay zekâya gönderiliyor…');
-  const r = await fetch(ASISTAN_URL.replace('kalori-asistan', 'kalori-foto'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ resim: kucult(img) }), signal: AbortSignal.timeout(35000) });
+  const r = await fetch(ASISTAN_URL.replace('kalori-asistan', 'kalori-foto'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ resim: kucult(img) }), signal: AbortSignal.timeout(45000) });
   const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.hata || 'Servis yanıt vermedi (' + r.status + ')');
   return (j.yemekler as any[]).map((y, i) => ({
     food: { id: 'ai' + i + Date.now(), ad: y.ad, en: y.ad, kcal: y.kcal100, p: y.p100, c: y.c100, f: y.f100, gram: Math.round(y.gram), kat: 'Yemek' } as Food,
