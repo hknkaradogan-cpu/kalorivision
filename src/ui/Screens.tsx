@@ -61,8 +61,8 @@ export function Kamera({ s, set, git }: P) {
     if (!f) return; setListe(null); setHata(''); setTamam(false);
     const url = URL.createObjectURL(f); setImg(url); setDur('Fotoğraf inceleniyor…');
     const im = new Image(); im.onload = async () => {
-      try { const t: Tahmin[] = await yemekTani(im, setDur); setListe(t.map(x => ({ food: x.food, gram: x.food.gram, sec: true, skor: x.skor }))); setDur(''); if (!t.length) setHata('Yemek tanınamadı. Fotoğrafı daha yakından çekmeyi dene veya aşağıdan elle ara.'); }
-      catch (e) { console.error(e); setDur(''); setHata('Yemek tanıma modeli yüklenemedi. İlk kullanımda model için internet gerekir. Elle aramayı kullanabilirsin.'); }
+      try { const t: Tahmin[] = await yemekTani(im, setDur); setListe(t.map(x => ({ food: x.food, gram: x.gram, sec: true, skor: x.skor }))); setDur(''); if (!t.length) setHata('Yemek tanınamadı. Fotoğrafı daha yakından çekmeyi dene veya aşağıdan elle ara.'); }
+      catch (e) { console.error(e); setDur(''); setHata('Yemek tanınamadı: ' + ((e as Error).message || 'bağlantı hatası') + '. İnterneti kontrol edip tekrar dene ya da elle ara.'); }
     }; im.onerror = () => { setDur(''); setHata('Fotoğraf açılamadı.'); }; im.src = url;
   };
   const secili = (liste ?? []).filter(x => x.sec); const toplam = sum(secili.map(x => scale(x.food, true, x.gram)));
@@ -71,7 +71,7 @@ export function Kamera({ s, set, git }: P) {
     <input ref={cam} type="file" accept="image/*" capture="environment" hidden onChange={e => { sec(e.target.files?.[0]); e.target.value = ''; }} />
     <input ref={gal} type="file" accept="image/*" hidden onChange={e => { sec(e.target.files?.[0]); e.target.value = ''; }} />
     <div className="row"><button className="btn" onClick={() => cam.current?.click()}>📷 Fotoğraf çek</button><button className="btn ghost" onClick={() => gal.current?.click()}>🖼️ Galeriden seç</button></div>
-    <p className="muted small">Fotoğraf cihazında işlenir, dışarı gönderilmez. İlk kullanımda yapay zekâ modeli indirilir (internet gerekir).</p>
+    <p className="muted small">Fotoğraf küçültülüp yapay zekâya (Gemini) gönderilir, saklanmaz. Birkaç saniyede sonuç gelir; internet gerekir.</p>
     {!img && <div className="scan"><i className="c1" /><i className="c2" /><i className="c3" /><i className="c4" /><span>🍽️</span><p>Yemeğini çerçevenin içine al</p></div>}
     {img && <div className="scan has"><img src={img} className="foto" alt="Seçilen yemek" /><i className="c1" /><i className="c2" /><i className="c3" /><i className="c4" /></div>}
     {dur && <div className="card center"><div className="spin" /><p><b>Fotoğraf analiz ediliyor…</b><br /><small>{dur}</small></p><div className="pbar"><i /></div></div>}
@@ -178,10 +178,10 @@ export function ProfilEkrani({ s, set }: P) {
       <label className="lbl">Kaç saatte bir</label><select className="inp" value={s.suAralik} onChange={e => set(x => ({ ...x, suAralik: +e.target.value }))}>{[1, 2, 3, 4].map(a => <option key={a} value={a}>{a} saat</option>)}</select>
       <p className="muted small">Hatırlatma saatleri: {hatirlatmaSaatleri(s).map(h => h + ':00').join(', ') || '—'}. {yerel() ? 'Bildirimler uygulama kapalıyken de gelir.' : 'Tarayıcıda bildirim yalnızca sayfa açıkken gelir; kapalıyken bildirim için Android uygulamasını (APK) kur.'}</p>
       <button className="btn ghost" onClick={bildirim}>{s.hatirlatma ? '🔔 Hatırlatma açık' : '🔔 Su hatırlatmasını aç'}</button></div>
-    <div className="card"><h3>Verilerim</h3><p className="muted small">Verilerin yalnızca bu telefonda saklanır; hiçbir sunucuya gönderilmez. Hesap sistemi bu sürümde yerel profil olarak çalışır.</p>
+    <div className="card"><h3>Verilerim</h3><p className="muted small">Verilerin bu telefonda saklanır. Yalnızca yemek fotoğrafı analizi ve asistana sorduğun sorular (ve özet profil bilgin) yapay zekâ servisine gönderilir; sunucuda saklanmaz. Hesap sistemi bu sürümde yerel profil olarak çalışır.</p>
       <button className="btn ghost" onClick={indir}>Verilerimi indir (JSON)</button>
       {!sil ? <button className="btn danger" onClick={() => setSil(true)}>Hesabı ve tüm verileri sil</button> : <div><p><b>Tüm kayıtların kalıcı olarak silinecek. Emin misin?</b></p><div className="row"><button className="btn ghost" onClick={() => setSil(false)}>Vazgeç</button><button className="btn danger" onClick={() => { set(() => ({ entries: [], water: {}, waterGoal: 2000, weights: [], hatirlatma: false, steps: {}, suBas: 8, suBit: 22, suAralik: 2 })); setSil(false); }}>Evet, sil</button></div></div>}</div>
-    <div className="card"><h3>Gizlilik ve bilgi</h3><p className="small muted">KaloriVision verilerini yalnızca cihazında saklar. Barkod araması Open Food Facts'e yalnızca barkod numarasını gönderir. Yemek tanıma fotoğrafı cihazında işlenir. Kalori ve porsiyon değerleri tahmindir, tıbbi tavsiye değildir.</p></div>
+    <div className="card"><h3>Gizlilik ve bilgi</h3><p className="small muted">KaloriVision verilerini cihazında saklar. Barkod araması Open Food Facts'e yalnızca barkod numarasını gönderir. Yemek fotoğrafı küçültülüp analiz için yapay zekâ servisine (Gemini) gönderilir, saklanmaz. Asistana yazdıkların ve özet profil bilgin de aynı servise gider. Kalori ve porsiyon değerleri tahmindir, tıbbi tavsiye değildir.</p></div>
   </div>);
 }
 export { Ozet };
