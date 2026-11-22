@@ -67,3 +67,7 @@ nav{border-radius:22px 22px 0 0;box-shadow:0 -4px 16px rgba(0,0,0,.08)}nav butto
 .tile .ti i,.mchip .mi i{font-style:normal;display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.75);font-size:1.4rem}
 .mchip .mi i{width:34px;height:34px;font-size:1.1rem;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.1)}
 .tile{min-height:112px;justify-content:space-between}
+
+.prow{display:flex;align-items:center;gap:10px;padding:12px 2px;border-bottom:1px solid var(--line)}.prow:last-child{border:0}.prow span:nth-child(2){flex:1}.prow em{font-style:normal;color:var(--muted)}.pi{width:34px;height:34px;border-radius:50%;background:#e7f6ec;display:flex;align-items:center;justify-content:center}.pi.big{width:48px;height:48px;font-size:1.5rem}
+.goal{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#e7f6ec,#fff)}.gk{font-size:1.6rem;display:block}
+.avatar{background:none;border:0;box-shadow:0 4px 14px rgba(47,125,225,.35);overflow:visible}.avatar svg{border-radius:50%;border:3px solid #fff}
