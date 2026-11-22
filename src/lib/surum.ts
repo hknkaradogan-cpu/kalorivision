@@ -1,5 +1,5 @@
 // Her yeni sürümde SURUM'u artır ve public/version.json içindeki "surum" değerini aynı yap.
-export const SURUM = 4;
+export const SURUM = 5;
 export const SURUM_URL = 'https://hknkaradogan-cpu.github.io/kalorivision/version.json';
 export interface Guncelleme { surum: number; apk: string; not: string }
 export async function guncellemeVarMi(): Promise<Guncelleme | null> {
